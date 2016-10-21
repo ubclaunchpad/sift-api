@@ -8,7 +8,7 @@ import (
 	"net/http"
 )
 
-func RunJob(name string, payload interface{}) (map[string]interface{}, error) {
+func RunJob(name string, payload interface{}) (interface{}, error) {
 	body, err := json.Marshal(payload)
 	if err != nil {
 		return nil, err
@@ -19,7 +19,7 @@ func RunJob(name string, payload interface{}) (map[string]interface{}, error) {
 		return nil, err
 	}
 
-	var result map[string]interface{}
+	var result interface{}
 	err = json.NewDecoder(resp.Body).Decode(&result)
 	if err != nil {
 		return nil, err

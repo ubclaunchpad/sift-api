@@ -3,11 +3,10 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
-	"io"
 	"math/rand"
 	"net/http"
-	"os"
 	"time"
 
 	"github.com/gorilla/mux"
@@ -46,24 +45,31 @@ func IndexHandler(w http.ResponseWriter, r *http.Request) {
 // Uploaded files are stored in `./uploads`
 func FeedbackFormHandler(w http.ResponseWriter, r *http.Request) {
 	r.ParseMultipartForm(MAX_FILE_SIZE)
-	file, handler, err := r.FormFile("feedback")
+	file, _, err := r.FormFile("feedback")
 	if err != nil {
-		fmt.Println(err.Error())
+		fmt.Println("Error parsing form: " + err.Error())
 		return
 	}
-
 	defer file.Close()
-	f, err := os.Create(handler.Filename)
+
+	var payload interface{}
+	err = json.NewDecoder(file).Decode(&payload)
 	if err != nil {
-		fmt.Println("error creating file", err.Error())
+		fmt.Println("Error parsing JSON payload: " + err.Error())
 		return
 	}
 
-	defer f.Close()
-	_, err = io.Copy(f, file)
+	res, err := RunJob("sample", payload)
 	if err != nil {
-		fmt.Println("error copying file", err.Error())
+		fmt.Println("Error running job: " + err.Error())
+		return
 	}
+
+	body, err := json.Marshal(res)
+	if err != nil {
+		fmt.Println("Error mashalling job response: " + err.Error())
+	}
+	w.Write(body)
 }
 
 // `main` function is the entry point, just like in C
