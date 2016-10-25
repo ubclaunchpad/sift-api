@@ -4,12 +4,17 @@ API server for the Sift app
 
 ## Setup
 
-To build
+Retrieve dependencies.
+```
+go get
+```
+
+Build the executable.
 ```
 go build
 ```
 
-To run
+Run the server.
 ```
 ./sift-api
 ```
