@@ -12,9 +12,10 @@ import (
 	"github.com/gorilla/mux"
 )
 
-// Max file size to store in memory. 100MB
 const (
-	AMQP_URL      = "amqp://sift:sift@localhost:5672/sift"
+	// URL for accessing RabbitMQ
+	AMQP_URL = "amqp://sift:sift@localhost:5672/sift"
+	// Max file size to store in memory. 100MB
 	MAX_FILE_SIZE = 6 << 24
 )
 
