@@ -46,9 +46,9 @@ func NewCeleryAPI(amqpURL string) (*CeleryAPI, error) {
 }
 
 // Runs a Celery job asynchronously and returns the result through the `result` channel.
-// The function should be run as a goroutine.
+// This function should be run as a goroutine.
 func (api *CeleryAPI) RunJob(name string, payload interface{}, result chan *CeleryResult) {
-	// Marshall the payload into a byte array
+	// Marshal the payload into a byte array
 	body, err := json.Marshal(payload)
 	if err != nil {
 		result <- &CeleryResult{err, nil}
