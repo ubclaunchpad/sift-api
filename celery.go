@@ -3,7 +3,6 @@
 package main
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
 	"time"
@@ -48,15 +47,8 @@ func NewCeleryAPI(amqpURL string) (*CeleryAPI, error) {
 // Runs a Celery job asynchronously and returns the result through the `result` channel.
 // This function should be run as a goroutine.
 func (api *CeleryAPI) RunJob(name string, payload interface{}, result chan *CeleryResult) {
-	// Marshal the payload into a byte array
-	body, err := json.Marshal(payload)
-	if err != nil {
-		result <- &CeleryResult{err, nil}
-		return
-	}
-
 	// Send the job to Celery to be run.
-	job, err := api.Client.Delay(name, body)
+	job, err := api.Client.Delay(name, payload)
 	if err != nil {
 		result <- &CeleryResult{err, nil}
 		return
@@ -64,17 +56,22 @@ func (api *CeleryAPI) RunJob(name string, payload interface{}, result chan *Cele
 
 	beganPollingAt := time.Now()
 	for {
+		// Check for timeout
 		if time.Now().Sub(beganPollingAt) > TIMEOUT {
 			err := errors.New(fmt.Sprintf("Request timed out to retrieve job %s with timeout %s.",
 				name, time.Duration(TIMEOUT).String()))
 			result <- &CeleryResult{err, nil}
 			return
 		}
+
+		// Check for job completion
 		ready, err := job.Ready()
 		if err != nil {
 			result <- &CeleryResult{err, nil}
 			return
 		}
+
+		// Retrieve result
 		if ready {
 			res, err := job.Get(GET_PERIOD)
 			result <- &CeleryResult{err, res}
