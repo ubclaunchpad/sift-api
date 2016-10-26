@@ -13,7 +13,10 @@ import (
 )
 
 // Max file size to store in memory. 100MB
-const MAX_FILE_SIZE = 6 << 24
+const (
+	AMQP_URL      = "amqp://sift:sift@localhost:5672/sift"
+	MAX_FILE_SIZE = 6 << 24
+)
 
 // Functions with lowercase names are private to the package.
 // Uppercase names are public
@@ -59,13 +62,22 @@ func FeedbackFormHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	res, err := RunJob("sample", payload)
+	api, err := NewCeleryAPI(AMQP_URL)
 	if err != nil {
-		fmt.Println("Error running job: " + err.Error())
+		fmt.Println("Error creating celery API: ", err.Error())
+	}
+
+	resultChannel := make(chan *CeleryResult)
+	go api.RunJob("sift.jobrunner.jobs.sample.run", payload, resultChannel)
+	result := <-resultChannel
+	close(resultChannel)
+
+	if result.Error != nil {
+		fmt.Println("Error running job: " + result.Error.Error())
 		return
 	}
 
-	body, err := json.Marshal(res)
+	body, err := json.Marshal(result.Result)
 	if err != nil {
 		fmt.Println("Error mashalling job response: " + err.Error())
 	}
