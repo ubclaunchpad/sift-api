@@ -1,6 +1,10 @@
 # Mac Stuff
 *.DS_Store
-sift-api
+/sift-api
+
+# Test stuff
+/split_test*
+**/test_data/hk_feedback*
 
 # Compiled Object files, Static and Dynamic libs (Shared Objects)
 *.o
