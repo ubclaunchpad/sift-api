@@ -1,6 +1,6 @@
 # Mac Stuff
 *.DS_Store
-/sift-api
+*/sift-api
 
 # Test stuff
 /split_test*
@@ -14,6 +14,9 @@
 # Folders
 _obj
 _test
+src
+pkg
+bin
 
 # Architecture specific extensions/prefixes
 *.[568vq]

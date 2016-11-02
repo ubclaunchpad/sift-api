@@ -1,5 +1,5 @@
 // Process input files into specified pre-process format
-package process
+package main
 
 import (
   "io"
