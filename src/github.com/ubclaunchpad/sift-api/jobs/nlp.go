@@ -8,7 +8,7 @@ import (
 	"net/http"
 )
 
-func RunJob(name string, payload interface{}) (interface{}, error) {
+func RunJob(name string, payload *interface{}) (interface{}, error) {
 	body, err := json.Marshal(payload)
 	if err != nil {
 		return nil, err

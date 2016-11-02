@@ -9,11 +9,14 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/ubclaunchpad/sift-api/jobs"
+	"github.com/ubclaunchpad/sift-api/parse"
+
 	"github.com/gorilla/mux"
 )
 
-// Max file size to store in memory. 100MB
-const MAX_FILE_SIZE = 6 << 24
+// Max file size to store in memory. 1GB
+const MAX_FILE_SIZE = 1 << 30
 
 // Functions with lowercase names are private to the package.
 // Uppercase names are public
@@ -53,13 +56,14 @@ func FeedbackFormHandler(w http.ResponseWriter, r *http.Request) {
 	defer file.Close()
 
 	var payload interface{}
-	err = json.NewDecoder(file).Decode(&payload)
-	if err != nil {
-		fmt.Println("Error parsing JSON payload: " + err.Error())
+
+	// Pre-process into specified structure
+	if err := ProcessJson(file.Body, &payload); err != nil {
+		fmt.Println("Error preprocessing JSON payload: " + err.Error())
 		return
 	}
 
-	res, err := RunJob("sample", payload)
+	res, err := RunJob("sample", &payload)
 	if err != nil {
 		fmt.Println("Error running job: " + err.Error())
 		return
