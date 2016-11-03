@@ -11,6 +11,9 @@
 *.a
 *.so
 
+# Sift-api binary (if GOBIN not set)
+sift-api
+
 # Folders
 _obj
 _test
