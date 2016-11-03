@@ -1,25 +1,18 @@
 # Mac Stuff
 *.DS_Store
-*/sift-api
 
 # Test stuff
 /split_test*
-**/test_data/hk_feedback*
+test_data/*
 
 # Compiled Object files, Static and Dynamic libs (Shared Objects)
 *.o
 *.a
 *.so
 
-# Sift-api binary (if GOBIN not set)
-sift-api
-
 # Folders
 _obj
 _test
-src
-pkg
-bin
 
 # Architecture specific extensions/prefixes
 *.[568vq]

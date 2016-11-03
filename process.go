@@ -3,21 +3,31 @@ package main
 
 import (
   "io"
-  "bufio"
   "regexp"
   "encoding/json"
 )
+
+type Feedback struct {
+    FBody string  `json:"fb_body"`
+    ID    uint64  `json:"fb_id"`
+}
+
+func (f *Feedback) MarshalJSON(v interface{}) ([]byte, error) {
+  return json.Marshal(map[string]interface{}{
+    "fb_body" : f.FBody,
+    "fb_id"   : f.ID,
+  })
+}
 
 // Detect whether input data is 'loose' JSON
 func IsLooseJSON(file io.Reader) (bool, error) {
   // Any set of dictionaries without a ',' between brackets is loose
   re, _ := regexp.Compile(".*}[^,]*{.*")
-  br := bufio.NewReader(file)
   buf := make([]byte, 1024)
   for {
-    n, err := br.Read(buf)
+    n, err := file.Read(buf)
     if err != nil && err != io.EOF {
-      panic(err)
+      return false, err
     }
     if n == 0 {
       break
@@ -31,24 +41,26 @@ func IsLooseJSON(file io.Reader) (bool, error) {
 }
 
 // Convert JSON into a predetermined JSON format with assigned ID's
-func ProcessJSON(file io.Reader, out *interface{}) error {
+func ProcessJSON(file io.Reader) (interface{}, error) {
   dec := json.NewDecoder(file)
-  temp := new(interface{})
-  var fb []interface{}
+
+  var (
+    temp  interface{}
+    fb    []interface{}
+    f     Feedback
+  )
 
   for i := uint64(0);; i++ {
     // Decode each JSON object
     if err := dec.Decode(&temp); err == io.EOF {
       break
     } else if err != nil {
-      panic(err)
+      return nil, err
     }
-    f := map[string]interface{}{
-      "fb_id":  i,
-      "fb_body":((*temp).(map[string]interface{})["reviewText"].(string)),
-    }
+    f.ID = i
+    tbody := ((temp).(map[string]interface{})["reviewText"].(string))
+    f.FBody = tbody
     fb = append(fb, f)
   }
-  *out = fb
-  return nil
+  return fb, nil
 }
