@@ -57,8 +57,7 @@ func FeedbackFormHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	defer file.Close()
 
-	var payload interface{}
-	err = json.NewDecoder(file).Decode(&payload)
+	payload, err := ProcessJSON(file)
 	if err != nil {
 		fmt.Println("Error parsing JSON payload: " + err.Error())
 		return

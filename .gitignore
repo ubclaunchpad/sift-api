@@ -1,6 +1,9 @@
 # Mac Stuff
 *.DS_Store
-sift-api
+
+# Test stuff
+/split_test*
+test_data/*
 
 # Compiled Object files, Static and Dynamic libs (Shared Objects)
 *.o
