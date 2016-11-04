@@ -15,6 +15,8 @@ import (
 const (
 	// URL for accessing RabbitMQ
 	AMQP_URL = "amqp://sift:sift@localhost:5672/sift"
+	// URL for accessing Redis
+	REDIS_URL = "localhost:6379"
 	// Max file size to store in memory. 100MB
 	MAX_FILE_SIZE = 6 << 24
 )
@@ -57,13 +59,14 @@ func FeedbackFormHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	defer file.Close()
 
-	payload, err := ProcessJSON(file)
+	// payload, err := ProcessJSON(file)
+	payload := map[string]interface{}{"something": 3}
 	if err != nil {
 		fmt.Println("Error parsing JSON payload: " + err.Error())
 		return
 	}
 
-	api, err := NewCeleryAPI(AMQP_URL)
+	api, err := NewCeleryAPI(AMQP_URL, REDIS_URL)
 	if err != nil {
 		fmt.Println("Error creating celery API: ", err.Error())
 	}
@@ -78,7 +81,7 @@ func FeedbackFormHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	body, err := json.Marshal(result.Result)
+	body, err := json.Marshal(result.Body)
 	if err != nil {
 		fmt.Println("Error mashalling job response: " + err.Error())
 	}
