@@ -3,7 +3,6 @@
 package main
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
 	"time"
@@ -12,9 +11,12 @@ import (
 )
 
 const (
+	// How frequently we ask Celery if it's done processing the task.
 	QUERY_PERIOD = time.Millisecond * 50
-	GET_PERIOD   = time.Second
-	TIMEOUT      = time.Second * 10
+	// How much time we allow for receiving a task's result, once we know it's completed.
+	RETRIEVAL_TIMEOUT = time.Second
+	// How much time we will spend querying Celery for completion status after dispatching a task.
+	TIMEOUT = time.Second * 10
 )
 
 // CeleryAPI contains references to the Celery backend, broker, and client.
@@ -46,17 +48,10 @@ func NewCeleryAPI(amqpURL string) (*CeleryAPI, error) {
 }
 
 // Runs a Celery job asynchronously and returns the result through the `result` channel.
-// The function should be run as a goroutine.
+// This function should be run as a goroutine.
 func (api *CeleryAPI) RunJob(name string, payload interface{}, result chan *CeleryResult) {
-	// Marshall the payload into a byte array
-	body, err := json.Marshal(payload)
-	if err != nil {
-		result <- &CeleryResult{err, nil}
-		return
-	}
-
 	// Send the job to Celery to be run.
-	job, err := api.Client.Delay(name, body)
+	job, err := api.Client.Delay(name, payload)
 	if err != nil {
 		result <- &CeleryResult{err, nil}
 		return
@@ -64,19 +59,24 @@ func (api *CeleryAPI) RunJob(name string, payload interface{}, result chan *Cele
 
 	beganPollingAt := time.Now()
 	for {
+		// Check for timeout
 		if time.Now().Sub(beganPollingAt) > TIMEOUT {
 			err := errors.New(fmt.Sprintf("Request timed out to retrieve job %s with timeout %s.",
 				name, time.Duration(TIMEOUT).String()))
 			result <- &CeleryResult{err, nil}
 			return
 		}
+
+		// Check for job completion
 		ready, err := job.Ready()
 		if err != nil {
 			result <- &CeleryResult{err, nil}
 			return
 		}
+
+		// Retrieve result
 		if ready {
-			res, err := job.Get(GET_PERIOD)
+			res, err := job.Get(RETRIEVAL_TIMEOUT)
 			result <- &CeleryResult{err, res}
 			return
 		}

@@ -12,9 +12,10 @@ import (
 	"github.com/gorilla/mux"
 )
 
-// Max file size to store in memory. 100MB
 const (
-	AMQP_URL      = "amqp://sift:sift@localhost:5672/sift"
+	// URL for accessing RabbitMQ
+	AMQP_URL = "amqp://sift:sift@localhost:5672/sift"
+	// Max file size to store in memory. 100MB
 	MAX_FILE_SIZE = 6 << 24
 )
 
@@ -47,6 +48,7 @@ func IndexHandler(w http.ResponseWriter, r *http.Request) {
 // Handles uploads of multipart forms. Files should have form name `feedback`.
 // Uploaded files are stored in `./uploads`
 func FeedbackFormHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Access-Control-Allow-Origin", "*")
 	r.ParseMultipartForm(MAX_FILE_SIZE)
 	file, _, err := r.FormFile("feedback")
 	if err != nil {
@@ -55,8 +57,7 @@ func FeedbackFormHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	defer file.Close()
 
-	var payload interface{}
-	err = json.NewDecoder(file).Decode(&payload)
+	payload, err := ProcessJSON(file)
 	if err != nil {
 		fmt.Println("Error parsing JSON payload: " + err.Error())
 		return
@@ -93,5 +94,6 @@ func main() {
 	// Handler for the feedback upload route
 	router.HandleFunc("/feedback", FeedbackFormHandler).Methods("POST")
 	// Create an http server on port 9090 and start serving using our router.
+	fmt.Println("Sift API running on port 9090...")
 	http.ListenAndServe(":9090", router)
 }
