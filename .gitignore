@@ -1,6 +1,9 @@
 # Mac Stuff
 *.DS_Store
 
+# Binary
+sift-api
+
 # Test stuff
 /split_test*
 test_data/*

@@ -30,14 +30,14 @@ type CeleryAPI struct {
 // CeleryResult is the type returned from job running functions.
 // It contains the result object or an error, if one occurred.
 type CeleryResult struct {
-	Error  error
-	Result interface{}
+	Error error
+	Body  interface{}
 }
 
 // Returns a new Celery API, connected to Celery at the given URL.
 // Celery and RabbitMQ must be running for this to succeed.
-func NewCeleryAPI(amqpURL string) (*CeleryAPI, error) {
-	backend := celery.NewAMQPCeleryBackend(amqpURL)
+func NewCeleryAPI(amqpURL, redisURL string) (*CeleryAPI, error) {
+	backend := celery.NewRedisCeleryBackend(redisURL, "")
 	broker := celery.NewAMQPCeleryBroker(amqpURL)
 	client, err := celery.NewCeleryClient(broker, backend, 0)
 	if err != nil {
@@ -68,12 +68,7 @@ func (api *CeleryAPI) RunJob(name string, payload interface{}, result chan *Cele
 		}
 
 		// Check for job completion
-		ready, err := job.Ready()
-		if err != nil {
-			result <- &CeleryResult{err, nil}
-			return
-		}
-
+		ready, _ := job.Ready()
 		// Retrieve result
 		if ready {
 			res, err := job.Get(RETRIEVAL_TIMEOUT)

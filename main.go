@@ -1,54 +1,29 @@
-// Package always goes at the top of the file
-// `main` package gets compiled, any other package name is importable.
 package main
 
 import (
 	"encoding/json"
 	"fmt"
-	"math/rand"
 	"net/http"
-	"time"
 
 	"github.com/gorilla/mux"
 )
 
 const (
 	// URL for accessing RabbitMQ
-	AMQP_URL = "amqp://sift:sift@localhost:5672/sift"
+	AMQP_URL = "amqp://sift:sift@rabbitmq:5672/sift"
+	// URL for accessing Redis
+	REDIS_URL = "redis:6379"
 	// Max file size to store in memory. 100MB
 	MAX_FILE_SIZE = 6 << 24
 )
 
-// Functions with lowercase names are private to the package.
-// Uppercase names are public
-func findARandomNumber(c chan int) {
-	// Seed a random number generator with the current Unix time
-	src := rand.NewSource(time.Now().Unix())
-	r := rand.New(src)
-
-	// Send a random int across the channel
-	c <- r.Int()
-}
-
-// Handler functions for HTTP routes take two inputs
-// You write strings to `w` to send responses back to the client
-// `r` contains info like headers, body, method, url, etc.
-func IndexHandler(w http.ResponseWriter, r *http.Request) {
-	// Make a new channel of `ints`. Channels are used to communicate between goroutines.
-	c := make(chan int)
-	// Create a new goroutine and run `findARandomNumber` on it.
-	go findARandomNumber(c)
-	// Channels block by default, so we wait for our goroutine to send a number back.
-	n := <-c
-
-	// Print to the responsewriter and terminate the connection.
-	fmt.Fprintf(w, "Hello Sift. Your random number is %d", n)
-}
-
 // Handles uploads of multipart forms. Files should have form name `feedback`.
 // Uploaded files are stored in `./uploads`
 func FeedbackFormHandler(w http.ResponseWriter, r *http.Request) {
+	fmt.Println("/feedback")
 	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Content-Type", "application/json")
+
 	r.ParseMultipartForm(MAX_FILE_SIZE)
 	file, _, err := r.FormFile("feedback")
 	if err != nil {
@@ -57,13 +32,14 @@ func FeedbackFormHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	defer file.Close()
 
-	payload, err := ProcessJSON(file)
+	// payload, err := ProcessJSON(file)
+	payload := map[string]interface{}{"something": 3}
 	if err != nil {
 		fmt.Println("Error parsing JSON payload: " + err.Error())
 		return
 	}
 
-	api, err := NewCeleryAPI(AMQP_URL)
+	api, err := NewCeleryAPI(AMQP_URL, REDIS_URL)
 	if err != nil {
 		fmt.Println("Error creating celery API: ", err.Error())
 	}
@@ -78,7 +54,8 @@ func FeedbackFormHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	body, err := json.Marshal(result.Result)
+	fmt.Println("Job result: ", result.Body)
+	body, err := json.Marshal(result.Body)
 	if err != nil {
 		fmt.Println("Error mashalling job response: " + err.Error())
 	}
@@ -89,8 +66,6 @@ func FeedbackFormHandler(w http.ResponseWriter, r *http.Request) {
 func main() {
 	// Create a new router, routers handle sets of logically related routes
 	router := mux.NewRouter()
-	// Add a handler for the root route
-	router.HandleFunc("/", IndexHandler)
 	// Handler for the feedback upload route
 	router.HandleFunc("/feedback", FeedbackFormHandler).Methods("POST")
 	// Create an http server on port 9090 and start serving using our router.
