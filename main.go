@@ -10,9 +10,9 @@ import (
 
 const (
 	// URL for accessing RabbitMQ
-	AMQP_URL = "amqp://sift:sift@localhost:5672/sift"
+	AMQP_URL = "amqp://sift:sift@rabbitmq:5672/sift"
 	// URL for accessing Redis
-	REDIS_URL = "localhost:6379"
+	REDIS_URL = "redis:6379"
 	// Max file size to store in memory. 100MB
 	MAX_FILE_SIZE = 6 << 24
 )
@@ -20,6 +20,7 @@ const (
 // Handles uploads of multipart forms. Files should have form name `feedback`.
 // Uploaded files are stored in `./uploads`
 func FeedbackFormHandler(w http.ResponseWriter, r *http.Request) {
+	fmt.Println("/feedback")
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.Header().Set("Content-Type", "application/json")
 
