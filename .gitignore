@@ -4,9 +4,8 @@
 # Binary
 sift-api
 
-# Test stuff
-/split_test*
-test_data/*
+# Full test data set
+test_data/hk_feedback*
 
 # Compiled Object files, Static and Dynamic libs (Shared Objects)
 *.o
