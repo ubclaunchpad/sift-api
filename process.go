@@ -13,7 +13,10 @@ type Feedback struct {
 }
 
 func (f *Feedback) MarshalJSON() ([]byte, error) {
-	return json.Marshal(f)
+	return json.Marshal(map[string]interface{}{
+		"fb_id": 		f.ID,
+		"fb_body": 	f.FBody,
+	})
 }
 
 // Detect whether input data is 'loose' JSON

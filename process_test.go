@@ -50,7 +50,9 @@ func TestStrictifyJSONSmall(t *testing.T) {
 	defer ffile.Close()
 
 	var desired interface{}
-	_ = json.NewDecoder(ffile).Decode(&desired)
+	if err = json.NewDecoder(ffile).Decode(&desired); err != nil {
+		t.Error("Error returned decoding json, not expected: ", err)
+	}
 
 	check, err := ProcessJSON(uffile)
 	if err != nil {
@@ -77,7 +79,9 @@ func TestStrictifyJSONLarge(t *testing.T) {
 	defer ffile.Close()
 
 	var desired interface{}
-	_ = json.NewDecoder(ffile).Decode(&desired)
+	if err = json.NewDecoder(ffile).Decode(&desired); err != nil {
+		t.Error("Error returned decoding json, not expected: ", err)
+	}
 
 	check, err := ProcessJSON(uffile)
 	if err != nil {
