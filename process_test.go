@@ -105,7 +105,14 @@ func BenchmarkJSONFull(b *testing.B) {
 	defer hk.Close()
 
 	b.StartTimer()
-	_, _ = ProcessJSON(hk)
+	out, err := ProcessJSON(hk)
 	b.StopTimer()
+	if err != nil {
+		b.Error("ProcessJSON did not work on a yuge file")
+	}
+
+	if err := WriteCSVToStdOut(out); err != nil {
+		return
+	}
 
 }
