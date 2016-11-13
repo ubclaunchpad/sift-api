@@ -98,6 +98,7 @@ func TestStrictifyJSONLarge(t *testing.T) {
 func BenchmarkJSONFull(b *testing.B) {
 	// NOTE: hk_feedback.json is a local file containing all Home and Kitchen review
 	// data from Amazon (see README), which I did not commit because of file size.
+	b.StopTimer()
 	hk, err := os.Open("test_data/hk_feedback.json")
 	if err != nil {
 		return
@@ -105,14 +106,16 @@ func BenchmarkJSONFull(b *testing.B) {
 	defer hk.Close()
 
 	b.StartTimer()
-	out, err := ProcessJSON(hk)
+	// Uncomment following two commented sections to write data to stdout as csv
+	// out, err := ProcessJSON(hk)
+	_, err = ProcessJSON(hk)
 	b.StopTimer()
 	if err != nil {
 		b.Error("ProcessJSON did not work on a yuge file")
 	}
 
-	if err := WriteCSVToStdOut(out); err != nil {
-		return
-	}
+	// if err := WriteCSVToStdOut(out); err != nil {
+	// 	return
+	// }
 
 }
