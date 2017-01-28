@@ -1,0 +1,4 @@
+# Do not copy any test data
+test_data/
+# src dir will be made in image
+src/
