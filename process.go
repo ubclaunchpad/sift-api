@@ -3,6 +3,9 @@ package main
 
 import (
 	"encoding/json"
+	"encoding/csv"
+	"strconv"
+	"os"
 	"io"
 	"regexp"
 )
@@ -63,4 +66,27 @@ func ProcessJSON(file io.Reader) ([]Feedback, error) {
 		fb = append(fb, f)
 	}
 	return fb, nil
+}
+
+func WriteCSVToStdOut(fblist []Feedback) error {
+	new := csv.NewWriter(os.Stdout)
+	headers := []string{"fb_id", "fb_body"}
+
+	if err := new.Write(headers); err != nil {
+		return err
+	}
+
+	for _, record := range fblist {
+		temp := []string{strconv.FormatUint(record.ID, 10), string(record.FBody)}
+		if err := new.Write(temp); err != nil {
+			return err
+		}
+	}
+
+	new.Flush()
+
+	if err := new.Error(); err != nil {
+		return err
+	}
+	return nil
 }
