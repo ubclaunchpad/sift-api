@@ -1,9 +1,14 @@
 package main
 
+import (
+	"time"
+)
+
 // Profile struct used to hold user data
 type Profile struct {
-	id          uint64
-	companyName string
-	pwHash      []byte
-	address     string
+	ID          uint64
+	CompanyName string
+	PwHash      []byte
+	Address     string
+	Created		time.Time
 }
