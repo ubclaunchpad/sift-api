@@ -31,7 +31,7 @@ type DBConfig struct {
 }
 
 func (cfg DBConfig) createDBQueryString() string {
-	return fmt.Sprintf("user=%s password=%s host=%s name=%s sslmode=%s",
+	return fmt.Sprintf("user=%s password=%s host=%s dbname=%s sslmode=%s",
 		cfg.DBUser, cfg.DBPassword, cfg.DBHost, cfg.DBName, cfg.DBSSLType)
 }
 

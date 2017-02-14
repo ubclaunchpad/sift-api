@@ -1,14 +1,15 @@
 package main
 
-import (
-	"time"
-)
+import "github.com/jinzhu/gorm"
 
-// Profile struct used to hold user data
 type Profile struct {
-	ID          uint64
+	gorm.Model
 	CompanyName string
 	PwHash      []byte
 	Address     string
-	Created		time.Time
+}
+
+type Session struct {
+	gorm.Model
+	UserID uint
 }
