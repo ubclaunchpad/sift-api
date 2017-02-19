@@ -1,26 +1,26 @@
 package main
 
-// CreateSession validates session object then pushes to session table
-func (dm *DataManager) CreateSession(sesh *Session) {
+// createSession validates session object then pushes to session table
+func (dm *DataManager) createSession(sesh *Session) {
 	// ValidateSession() if more data is eventually attached to sesh object
 	dm.DB.Create(sesh)
 }
 
-// GetSessionByID retrieves using id primary key
-func (dm *DataManager) GetSessionByID(id uint) *Session {
+// getSessionByID retrieves using id primary key
+func (dm *DataManager) getSessionByID(id uint) *Session {
 	sesh := Session{}
 	dm.DB.First(&sesh, id)
 	return &sesh
 }
 
-// GetSessionByUser retrieves using UserID
-func (dm *DataManager) GetSessionByUser(id uint) *Session {
+// getSessionByUser retrieves using UserID
+func (dm *DataManager) getSessionByUser(id uint) *Session {
 	sesh := Session{}
 	dm.DB.Where("user_id = ?", id).First(&sesh)
 	return &sesh
 }
 
-// DeleteSessionsByUser deletes all sessions for a given UserID
-func (dm *DataManager) DeleteSessionsByUser(id uint) {
+// deleteSessionsByUser delete all sessions for a given UserID
+func (dm *DataManager) deleteSessionsByUser(id uint) {
 	dm.DB.Where("user_id = ?", id).Delete(Session{})
 }
