@@ -3,7 +3,6 @@ package main
 
 import (
     "log"
-    "fmt"
     "net/http"
 
     "github.com/jinzhu/gorm"
@@ -16,18 +15,14 @@ type DataManager struct {
     *gorm.DB
 }
 
-const (
-    MAX_PROF_SIZE = 1 << 20 // 1 MiB
-)
-
 // IndexNewProfile operates on a DataManager struct and takes a ResponseWriter
 // and a Request, whose body should contain a new Profile, and creates a db 
 // record of this new profile. Writes the result of that query, ID or error, 
 // to w.
 func (dm *DataManager) IndexNewProfile(w http.ResponseWriter, r *http.Request) {
     // Handle error here as PostFormValue ignores errors
-    if err := r.ParseMultipartForm(MAX_PROF_SIZE); err != nil {
-        log.Fatal(err)
+    if err := r.ParseForm(); err != nil {
+        log.Fatal("r.ParseForm: ", err)
         return
     }
     p := Profile{
@@ -37,28 +32,25 @@ func (dm *DataManager) IndexNewProfile(w http.ResponseWriter, r *http.Request) {
         Address:        r.PostFormValue("company_address"),
     }
     if p.CompanyName == "" || p.PwHash == nil || p.Address == "" {
-        fmt.Printf("Could not index new profile, at least one field was blank:\ncompany_name: %v\npw_hash: %v\ncompany_address: %v\n",
-            p.CompanyName, p.PwHash, p.Address)
+        http.Error(w, "One or more profile data fields were blank.", http.StatusBadRequest)
         return
     }
-    // Create a new profile record and check for 
+    // Create a new profile record
     if err := dm.Create(&p).Error; err != nil {
-        log.Fatal(err)
+        http.Error(w, "Database error on profile indexing.", http.StatusInternalServerError)
+        log.Fatal("dm.Create: ", err)
         return
     }
-    // Create response via ResponseWriter
-    w.Header().Set("Access-Control-Allow-Origin", "*")
-    w.Header().Set("Content-Type", "application/json")
-    body := []byte(`{"Message":"Profile successfully created."}`)
-    w.Write(body)
+    // Profile record created successfully, send OK
+    w.WriteHeader(http.StatusOK)
 }
 
 func (dm *DataManager) GetProfileHelper(cn, pwh string) (Profile, error) {
     var prof Profile
     d := dm.Where("company_name = ? AND pw_hash = ?", cn, pwh).Find(&prof)
     if d.Error != nil {
-        log.Fatal(err)
-        return nil, err
+        log.Fatal("dm.Where: ", d.Error)
+        return Profile{}, d.Error
     }
     return prof, nil
 }

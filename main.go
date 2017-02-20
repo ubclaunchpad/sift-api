@@ -42,7 +42,9 @@ func FeedbackFormHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.Header().Set("Content-Type", "application/json")
 
-	r.ParseMultipartForm(MAX_FILE_SIZE)
+	if err := r.ParseMultipartForm(MAX_FILE_SIZE); err != nil {
+		fmt.Println("Error parsing form: " + err.Error())		
+	}
 	file, _, err := r.FormFile("feedback")
 	if err != nil {
 		fmt.Println("Error parsing form: " + err.Error())
@@ -87,7 +89,7 @@ func main() {
 		DBUser:		"test",
 		DBPassword:	"testpw",
 		DBHost:		"localhost",
-		DBName:		"sift_user_info",
+		DBName:		"sift_user_data",
 		DBSSLType:	"disable",			// switch to 'require' in production
 	}
 	// Lazily open a connection to the database. The database will only
@@ -95,21 +97,27 @@ func main() {
 	// while service client requests
 	db, err := gorm.Open("postgres", cfg.createDBQueryString())
 	// Create a DataManager with our lazy connection (see datalayer.go)
-	dm := DataManager{DB: db}
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal("gorm.Open: ", err)
 	}
 	// Close the connection on main() exit
 	defer db.Close()
+	dm := DataManager{db}
 	// Migration of native types, which can be added as arguments as needed
-	dm.DB.AutoMigrate(&Profile{})
+	dm.AutoMigrate(&Profile{})
+	dm.AutoMigrate(&Session{})
 	// Create a new router, routers handle sets of logically related routes
 	router := mux.NewRouter()
 	// Handler for the feedback upload route
 	router.HandleFunc("/feedback", FeedbackFormHandler).Methods("POST")
+	// Handler for creation of profiles
+	router.HandleFunc("/profile", dm.IndexNewProfile).Methods("POST")
 	// Example DataManager handler:
 	// router.HandleFunc("/profile/{id: [0-9]+}", dm.GetExistingProfile).Methods("GET")
 	// Create an http server on port 9090 and start serving using our router.
 	fmt.Println("Sift API running on port 9090...")
-	http.ListenAndServe(":9090", router)
+	if err := http.ListenAndServe(":9090", router); err != nil {
+		log.Fatal("http.ListenAndServe: ", err)
+	}
+	
 }

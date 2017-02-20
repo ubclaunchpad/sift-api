@@ -1,26 +1,10 @@
 package main
 
 import (
-	"log"
 	"testing"
-
+	
 	"github.com/stretchr/testify/assert"
 )
-
-// setup/teardown
-func TestMain(m *testing.M) {
-	dm.DB.AutoMigrate(&Session{})
-	defer db.Close()
-	m.Run()
-}
-
-func TestConnectDB(t *testing.T) {
-
-	if err != nil {
-		log.Fatal(err)
-		t.Fail()
-	}
-}
 
 func TestGetSession(t *testing.T) {
 
