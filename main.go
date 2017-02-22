@@ -110,10 +110,11 @@ func main() {
 	router := mux.NewRouter()
 	// Handler for the feedback upload route
 	router.HandleFunc("/feedback", FeedbackFormHandler).Methods("POST")
-	// Handler for creation of profiles
+	// Handlers for profile CRUD operations
 	router.HandleFunc("/profile", dm.IndexNewProfile).Methods("POST")
-	// Example DataManager handler:
-	// router.HandleFunc("/profile/{id: [0-9]+}", dm.GetExistingProfile).Methods("GET")
+	router.HandleFunc("/profile/{company_name}/{user_name}", dm.GetExistingProfile).Methods("GET")
+	router.HandleFunc("/profile/{company_name}/{user_name}", dm.UpdateExistingProfile).Methods("PUT")
+	router.HandleFunc("/profile/{company_name}/{user_name}", dm.DeleteExistingProfile).Methods("DELETE")
 	// Create an http server on port 9090 and start serving using our router.
 	fmt.Println("Sift API running on port 9090...")
 	if err := http.ListenAndServe(":9090", router); err != nil {
