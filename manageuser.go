@@ -119,7 +119,14 @@ func (dm *DataManager) IndexNewProfile(w http.ResponseWriter, r *http.Request) {
         return
     }
     // Profile record created successfully, send OK
-    w.WriteHeader(http.StatusOK)
+    w.Header().Set("Content-Type", "application/json")
+    w.WriteHeader(http.StatusCreated)
+    body, err := json.Marshal(p)
+    if err != nil {
+        log.Fatal("json.Marshal: ", err)
+        return
+    }
+    w.Write(body)
 }
 
 // GetExistingProfile operates on a DataManager struct and takes a ResponseWriter
@@ -189,7 +196,19 @@ func (dm *DataManager) UpdateExistingProfile(w http.ResponseWriter, r *http.Requ
         }
     }
     tx.Commit()
-    w.WriteHeader(http.StatusNoContent)
+    w.Header().Set("Content-Type", "application/json")
+    p := Profile{
+        CompanyName:    cn,
+        UserName:       temp["user_name"].(string),
+        Address:        temp["company_address"].(string),
+        PwHash:         temp["pw_hash"].([]byte),
+    }
+    body, err := json.Marshal(p)
+    if err != nil {
+        log.Fatal("json.Marshal: ", err)
+        return
+    }
+    w.Write(body)
 }
 
 // DeleteExistingProfile operates on a DataManager struct and takes a user's 
@@ -212,7 +231,7 @@ func (dm *DataManager) DeleteExistingProfile(w http.ResponseWriter, r *http.Requ
     //     http.Error(w, "User not authenticated", http.StatusUnauthorized)
     //     return        
     // }
-    // BUG: Delete() does not throw an error when un or cn are not stored values,
+    // BUG: Delete() does not throw an error when un or cn are not in the db;
     // seen by running with above userExists statement commented via 
     // TestDeleteExistingProfileNotExistFail()
     qstring := "user_name = ? AND company_name = ?"

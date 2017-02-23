@@ -5,6 +5,7 @@ import (
     "net/http"
     "net/url"
     "strings"
+    "encoding/json"
         
     "testing"
     "net/http/httptest"
@@ -30,6 +31,23 @@ func TestIndexNewProfileSuccess(t *testing.T) {
     handler.ServeHTTP(rr, req)
     if rr.Code != http.StatusOK {
         t.Errorf("HTTP status code recieved: %d, expected %d", rr.Code, http.StatusOK)
+    }
+    var p Profile
+    err = json.Unmarshal(rr.Body.Bytes(), &p)
+    if err != nil {
+        t.Errorf("Error (%v) encountered when unmarshalling profile", err)
+    }
+    if p.UserName != formdata["user_name"][0] {
+        t.Errorf("Incorrect user_name: received %s, expected %s", p.UserName, formdata["user_name"][0])
+    }
+    if p.CompanyName != formdata["company_name"][0] {
+        t.Errorf("Incorrect company_name: received %s, expected %s", p.CompanyName, formdata["company_name"][0])
+    }
+    if p.Address != formdata["company_address"][0] {
+        t.Errorf("Incorrect company_address: received %s, expected %s", p.Address, formdata["company_address"][0])
+    }
+    if string(p.PwHash) != formdata["pw_hash"][0] {
+        t.Errorf("Incorrect pw_hash: received %s, expected %s", p.PwHash, formdata["pw_hash"][0])
     }
 }
 
@@ -121,10 +139,28 @@ func TestUpdateExistingProfileSuccess(t *testing.T) {
     rr := httptest.NewRecorder()
     handler := http.HandlerFunc(dm.UpdateExistingProfile)
     handler.ServeHTTP(rr, req)
-    if rr.Code != http.StatusNoContent {
-        t.Errorf("HTTP status code recieved: %d, expected %d", rr.Code, http.StatusNoContent)
+    if rr.Code != http.StatusOK {
+        t.Errorf("HTTP status code recieved: %d, expected %d", rr.Code, http.StatusOK)
     }
-
+    var p Profile
+    err = json.Unmarshal(rr.Body.Bytes(), &p)
+    if err != nil {
+        t.Errorf("Error (%v) encountered when unmarshalling profile", err)
+    }
+    if p.UserName != formdata["user_name"][0] {
+        t.Errorf("Incorrect user_name: received %s, expected %s", p.UserName, formdata["user_name"][0])
+    }
+    // Should not have changed as UpdateExistingProfile ignores updates to company_name
+    cn, _ = url.QueryUnescape(cn)
+    if p.CompanyName != cn {
+        t.Errorf("Incorrect company_name: received %s, expected %s", p.CompanyName, cn)
+    }
+    if p.Address != formdata["company_address"][0] {
+        t.Errorf("Incorrect company_address: received %s, expected %s", p.Address, formdata["company_address"][0])
+    }
+    if string(p.PwHash) != formdata["pw_hash"][0] {
+        t.Errorf("Incorrect pw_hash: received %s, expected %s", p.PwHash, formdata["pw_hash"][0])
+    }
 }
 
 func TestDeleteExistingProfileSuccess(t *testing.T) {
