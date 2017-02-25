@@ -25,7 +25,6 @@ type DataManager struct {
 // empty strings.
 func (dm *DataManager) userExists(un, cn string) bool {
     qstring := "user_name = ? AND company_name = ?"
-    // Explicit error type check
     return !dm.Where(qstring, un, cn).First(&Profile{}).RecordNotFound()
 }
 
@@ -52,6 +51,17 @@ func (dm *DataManager) GetProfileHelper(un, cn string) (Profile, error) {
     var prof Profile
     qstring := "user_name = ? AND company_name = ?"
     if err := dm.Where(qstring, un, cn).First(&prof).Error; err != nil {
+        return Profile{}, err
+    }
+    return prof, nil
+}
+
+// Queries db for user profile matching user's id. Useful once user is logged in.
+// Assumes id is not an empty string or nil.
+func (dm *DataManager) GetProfileByIdHelper(id uint) (Profile, error) {
+    var prof Profile
+    qstring := "id = ?"
+    if err := dm.Where(qstring, id).First(&prof).Error; err != nil {
         return Profile{}, err
     }
     return prof, nil
