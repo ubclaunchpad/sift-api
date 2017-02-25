@@ -29,8 +29,8 @@ func TestIndexNewProfileSuccess(t *testing.T) {
     rr := httptest.NewRecorder()
     handler := http.HandlerFunc(dm.IndexNewProfile)
     handler.ServeHTTP(rr, req)
-    if rr.Code != http.StatusOK {
-        t.Errorf("HTTP status code recieved: %d, expected %d", rr.Code, http.StatusOK)
+    if rr.Code != http.StatusCreated {
+        t.Errorf("HTTP status code recieved: %d, expected %d", rr.Code, http.StatusCreated)
     }
     var p Profile
     err = json.Unmarshal(rr.Body.Bytes(), &p)
