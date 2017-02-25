@@ -3,8 +3,8 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"net/http"
 	"log"
+	"net/http"
 
 	"github.com/gorilla/mux"
 	"github.com/jinzhu/gorm"
@@ -23,11 +23,11 @@ const (
 // Configures the databse with user, password, host, name, and SSL encryption
 // type
 type DBConfig struct {
-    DBUser          string
-    DBPassword      string
-    DBHost          string
-    DBName          string
-    DBSSLType       string
+	DBUser     string
+	DBPassword string
+	DBHost     string
+	DBName     string
+	DBSSLType  string
 }
 
 func (cfg DBConfig) createDBQueryString() string {
@@ -43,7 +43,7 @@ func FeedbackFormHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
 	if err := r.ParseMultipartForm(MAX_FILE_SIZE); err != nil {
-		fmt.Println("Error parsing form: " + err.Error())		
+		fmt.Println("Error parsing form: " + err.Error())
 	}
 	file, _, err := r.FormFile("feedback")
 	if err != nil {
@@ -86,11 +86,11 @@ func FeedbackFormHandler(w http.ResponseWriter, r *http.Request) {
 func main() {
 	// Database configuration
 	cfg := DBConfig{
-		DBUser:		"test",
-		DBPassword:	"testpw",
-		DBHost:		"localhost",
-		DBName:		"sift_user_data",
-		DBSSLType:	"disable",			// switch to 'require' in production
+		DBUser:     "test",
+		DBPassword: "testpw",
+		DBHost:     "localhost",
+		DBName:     "sift_user_data",
+		DBSSLType:  "disable", // switch to 'require' in production
 	}
 	// Lazily open a connection to the database. The database will only
 	// be opened when the first query/exec statement is made against it
@@ -102,7 +102,7 @@ func main() {
 	}
 	// Close the connection on main() exit
 	defer db.Close()
-	dm := DataManager{db}
+	dm := NewDataManager(db)
 	// Migration of native types, which can be added as arguments as needed
 	dm.AutoMigrate(&Profile{})
 	dm.AutoMigrate(&Session{})
@@ -115,10 +115,13 @@ func main() {
 	router.HandleFunc("/profile/{company_name}/{user_name}", dm.GetExistingProfile).Methods("GET")
 	router.HandleFunc("/profile/{company_name}/{user_name}", dm.UpdateExistingProfile).Methods("PUT")
 	router.HandleFunc("/profile/{company_name}/{user_name}", dm.DeleteExistingProfile).Methods("DELETE")
+	// Handlers for logins
+	router.HandleFunc("/login", dm.Login).Methods("POST")
+	router.HandleFunc("/logout", dm.Logout).Methods("POST")
 	// Create an http server on port 9090 and start serving using our router.
 	fmt.Println("Sift API running on port 9090...")
 	if err := http.ListenAndServe(":9090", router); err != nil {
 		log.Fatal("http.ListenAndServe: ", err)
 	}
-	
+
 }
