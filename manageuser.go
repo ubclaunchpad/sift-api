@@ -67,6 +67,14 @@ func (dm *DataManager) GetProfileByIdHelper(id uint) (Profile, error) {
     return prof, nil
 }
 
+// Authenticates users by company_name, user_name, and pw_hash. Returns true if
+// record is found and fields match, false otherwise. If false, user did not enter
+// the correct credentials.
+func (dm *DataManager) UserPwAuthSuccess(un, cn string, pwh []byte) bool {
+    qstring := "user_name = ? AND company_name = ? AND pw_hash = ?"
+    return !dm.Where(qstring, un, cn, pwh).First(&Profile{}).RecordNotFound()
+}
+
 // Updates given use field based on field name, which must be one of {user_name,
 // company_name, company_address, pw_hash}. Can be used for changing passwords.
 // Assumes user is already logged in.
