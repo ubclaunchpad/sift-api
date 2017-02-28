@@ -9,17 +9,18 @@ import (
 // for managing and handling request to the database
 type DataManager struct {
 	*gorm.DB
-	CookieManager securecookie.SecureCookie
+	CookieManager *securecookie.SecureCookie
 }
 
 // NewDataManager constructs the DataManager
 // struct and initializes the secure cookie keys
 func NewDataManager(db *gorm.DB) DataManager {
-	dm := DataManager{db}
-	dm.CookieManager = securecookie.New(
+
+	key := securecookie.New(
 		securecookie.GenerateRandomKey(64),
 		securecookie.GenerateRandomKey(32))
 
+	dm := DataManager{db, key}
 	return dm
 
 }
