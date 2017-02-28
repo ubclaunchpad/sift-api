@@ -19,31 +19,30 @@ type DataManager struct {
     *gorm.DB
 }
 
-/* -------------------- HELPER METHODS -------------------- */
+/* ----------------------------- HELPER METHODS ----------------------------- */
+
 // Tests if user exists already. Returns true if the combination of user_name 
 // and company_name is already taken, false otherwise. Assumes un and cn are not
 // empty strings.
 func (dm *DataManager) userExists(un, cn string) bool {
     qstring := "user_name = ? AND company_name = ?"
-    // Explicit error type check
     return !dm.Where(qstring, un, cn).First(&Profile{}).RecordNotFound()
 }
 
 // Helper to extract company_name and user_name from requests to resources with
 // the form: /profile/{company_name}/{user_name}
-func parseProfileQuery(r *http.Request) (string, string) {
-    params := strings.Split(r.URL.Path, "/")
-    cn, err := url.QueryUnescape(params[2])
+func parseProfileQuery(path string) []string {
+    upath, err := url.QueryUnescape(path)
     if err != nil {
         log.Fatal("url.QueryUnescape: ", err)
-        return "", "" 
+        return nil
     }
-    un, err := url.QueryUnescape(params[3])
-    if err != nil {
-        log.Fatal("url.QueryUnescape: ", err)
-        return "", ""
+    params := strings.Split(upath, "/")
+    resources := make([]string, 0)
+    for _, val := range params {
+        resources = append(resources, val)
     }
-    return un, cn
+    return resources
 }
 
 // Queries db for user profile matching user_name and company_name. 
@@ -55,6 +54,25 @@ func (dm *DataManager) GetProfileHelper(un, cn string) (Profile, error) {
         return Profile{}, err
     }
     return prof, nil
+}
+
+// Queries db for user profile matching user's id. Useful once user is logged in.
+// Assumes id is not an empty string or nil.
+func (dm *DataManager) GetProfileByIdHelper(id uint) (Profile, error) {
+    var prof Profile
+    qstring := "id = ?"
+    if err := dm.Where(qstring, id).First(&prof).Error; err != nil {
+        return Profile{}, err
+    }
+    return prof, nil
+}
+
+// Authenticates users by company_name, user_name, and pw_hash. Returns true if
+// record is found and fields match, false otherwise. If false, user did not enter
+// the correct credentials.
+func (dm *DataManager) UserPwAuthSuccess(un, cn string, pwh []byte) bool {
+    qstring := "user_name = ? AND company_name = ? AND pw_hash = ?"
+    return !dm.Where(qstring, un, cn, pwh).First(&Profile{}).RecordNotFound()
 }
 
 // Updates given use field based on field name, which must be one of {user_name,
@@ -84,7 +102,7 @@ func (dm *DataManager) UpdateProfileHelper(un, cn, key string, val interface{}) 
     return nil
 }
 
-/* -------------------------------------------------------- */
+/* -------------------------------------------------------------------------- */
 
 // IndexNewProfile operates on a DataManager struct and takes a ResponseWriter
 // and a Request, whose body should contain a new Profile, and creates a db 
@@ -133,7 +151,8 @@ func (dm *DataManager) IndexNewProfile(w http.ResponseWriter, r *http.Request) {
 // and a Request, whose body should contain the ID of an existing user profile
 // record, and writes the result of that query, user Profile or error, to w.
 func (dm *DataManager) GetExistingProfile(w http.ResponseWriter, r *http.Request) {
-    un, cn := parseProfileQuery(r)
+    rsrc := parseProfileQuery(r.URL.Path)
+    cn, un := rsrc[2], rsrc[3]
     if un == "" || cn == "" {
         http.Error(w, "One or more credentials were blank", http.StatusBadRequest)
         return
@@ -164,7 +183,8 @@ func (dm *DataManager) GetExistingProfile(w http.ResponseWriter, r *http.Request
 // success message on record update will be written to w.
 func (dm *DataManager) UpdateExistingProfile(w http.ResponseWriter, r *http.Request) {
     // TODO: replace un/cn matching with cookie lookup
-    un, cn := parseProfileQuery(r)
+    rsrc := parseProfileQuery(r.URL.Path)
+    cn, un := rsrc[2], rsrc[3]
     if un == "" || cn == "" {
         http.Error(w, "One or more credentials were blank", http.StatusBadRequest)
         return
@@ -215,7 +235,8 @@ func (dm *DataManager) UpdateExistingProfile(w http.ResponseWriter, r *http.Requ
 // unique ID and deletes the corresponding db record. Either an error or 
 // success message onm successful deletion of the record will be written to w.
 func (dm *DataManager) DeleteExistingProfile(w http.ResponseWriter, r *http.Request) {
-    un, cn := parseProfileQuery(r)
+    rsrc := parseProfileQuery(r.URL.Path)
+    cn, un := rsrc[2], rsrc[3]
     if un == "" || cn == "" {
         http.Error(w, "One or more credentials were blank", http.StatusBadRequest)
         return
