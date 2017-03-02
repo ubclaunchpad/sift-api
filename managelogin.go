@@ -77,10 +77,10 @@ func (dm *DataManager) Login(w http.ResponseWriter, r *http.Request) {
 		"id": createdSesh.ID,
 	}
 
-	encoded, err := dm.CookieManager.Encode("session", cookieValue)
+	encoded, err := dm.Encode("session", cookieValue)
 
 	if err != nil {
-		log.Fatal("dm.CookieManager.Encode", err)
+		log.Fatal("dm.Encode", err)
 		http.Error(w, "Error creating cookie for user", http.StatusInternalServerError)
 		return
 	}

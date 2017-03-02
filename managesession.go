@@ -14,17 +14,16 @@ func (dm *DataManager) CreateCookieHelper(id uint) (http.Cookie, error) {
 		"id": id,
 	}
 
-	encoded, err := dm.CookieManager.Encode("session", value)
+	encoded, err := dm.Encode("session", value)
+	if err != nil {
+		log.Fatal("dm.Encode, err:", err)
+		return http.Cookie{}, err
+	}
 
 	cookie := http.Cookie{
 		Name:  "session",
 		Value: encoded,
 		Path:  "/",
-	}
-
-	if err != nil {
-		log.Fatal("dm.CookieManager.Encode", err)
-		return cookie, err
 	}
 
 	return cookie, nil
@@ -35,46 +34,41 @@ func (dm *DataManager) DecodeCookieHelper(cookie http.Cookie) (uint, error) {
 
 	value := make(map[string]uint)
 
-	err := dm.CookieManager.Decode("session", cookie.Value, &value)
-
-	id := value["id"]
-
-	if err != nil {
-		log.Fatal("dm.CookieManager.Decode", err)
-		return id, err
+	if err := dm.Decode("session", cookie.Value, &value); err != nil {
+		log.Fatal("dm.Decode, err:", err)
+		return 0, err
 	}
 
 	return value["id"], nil
-
 }
 
 // Helper Methods
 
 // CreateSessionHelper validates session object then pushes to session table
-func (dm *DataManager) CreateSessionHelper(sesh Session) (err error) {
-	return dm.DB.Create(&sesh).Error
+func (dm *DataManager) CreateSessionHelper(sesh Session) error {
+	return dm.Create(&sesh).Error
 }
 
 // GetSessionByIdHelper retrieves using id primary key
 func (dm *DataManager) GetSessionByIdHelper(id uint) (sesh Session, err error) {
-	err = dm.DB.First(&sesh, id).Error
-	return sesh, err
+	err = dm.First(&sesh, id).Error
+	return
 }
 
 // GetSessionByUserHelper retrieves using UserID
 func (dm *DataManager) GetSessionByUserHelper(id uint) (sesh Session, err error) {
-	err = dm.DB.Where("user_id = ?", id).First(&sesh).Error
-	return sesh, err
+	err = dm.Where("user_id = ?", id).First(&sesh).Error
+	return
 }
 
 // DeleteSessionByIdHelper deletes a single session by id
 func (dm *DataManager) DeleteSessionByIdHelper(id uint) error {
-	return dm.DB.Where("id = ?", id).Delete(Session{}).Error
+	return dm.Where("id = ?", id).Delete(Session{}).Error
 }
 
 // DeleteSessionsByUserHelper delete all sessions for a given UserID
 func (dm *DataManager) DeleteSessionsByUserHelper(id uint) error {
-	return dm.DB.Where("user_id = ?", id).Delete(Session{}).Error
+	return dm.Where("user_id = ?", id).Delete(Session{}).Error
 }
 
 // Handler Functions

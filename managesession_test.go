@@ -2,15 +2,19 @@ package main
 
 import (
 	"testing"
-
+	
 	"github.com/stretchr/testify/assert"
 )
 
 func TestGetSessionById(t *testing.T) {
+	s := Session{UserID: 1,}
+	
+	ns := dm.Create(&s).Value
+	id := (ns.(*Session)).ID
+	if dm.First(&s).RecordNotFound() {
+		t.Error("Record not found")
+	}
 
-	// assuming session with ID 1 exists and
-	// hasn't been deleted
-	var id uint = 1
 	if sesh, err := dm.GetSessionByIdHelper(id); err != nil {
 		t.Log("Failed to get session: ", err)
 		t.Fail()
