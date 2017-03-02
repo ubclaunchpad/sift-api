@@ -2,12 +2,12 @@
 package main
 
 import (
-	"encoding/json"
 	"encoding/csv"
-	"strconv"
-	"os"
+	"encoding/json"
 	"io"
+	"os"
 	"regexp"
+	"strconv"
 )
 
 type Feedback struct {
@@ -17,8 +17,8 @@ type Feedback struct {
 
 func (f *Feedback) MarshalJSON() ([]byte, error) {
 	return json.Marshal(map[string]interface{}{
-		"fb_id": 		f.ID,
-		"fb_body": 	f.FBody,
+		"fb_id":   f.ID,
+		"fb_body": f.FBody,
 	})
 }
 

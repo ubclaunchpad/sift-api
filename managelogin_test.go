@@ -13,14 +13,14 @@ import (
 )
 
 func TestLoginGood(t *testing.T) {
-	
+
 	prof := Profile{
-		UserName: 		"super_sifter",
-		CompanyName: 	"Sift Technologies, Inc.",
-		Address:		"4321 Pleasantown Rd, Pleasantville, PV, UPV, V1A 1X1",
-		PwHash:			[]byte("cd026ec28d7976550a52da2520660bd8e26b5b40"),
+		UserName:    "super_sifter",
+		CompanyName: "Sift Technologies, Inc.",
+		Address:     "4321 Pleasantown Rd, Pleasantville, PV, UPV, V1A 1X1",
+		PwHash:      []byte("cd026ec28d7976550a52da2520660bd8e26b5b40"),
 	}
-	
+
 	if err := dm.Create(&prof).Error; err != nil {
 		t.Error("Creation of profile failed with err: ", err)
 	}

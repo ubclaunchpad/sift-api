@@ -2,13 +2,13 @@ package main
 
 import (
 	"testing"
-	
+
 	"github.com/stretchr/testify/assert"
 )
 
 func TestGetSessionById(t *testing.T) {
-	s := Session{UserID: 1,}
-	
+	s := Session{UserID: 1}
+
 	ns := dm.Create(&s).Value
 	id := (ns.(*Session)).ID
 	if dm.First(&s).RecordNotFound() {
