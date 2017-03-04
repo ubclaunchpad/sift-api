@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"flag"
 	"fmt"
 	"log"
 	"net/http"
@@ -19,6 +20,8 @@ const (
 	// Max file size to store in memory. 100MB
 	MAX_FILE_SIZE = 6 << 24
 )
+
+var db_host = flag.String("dbhost", "127.0.0.1", "The address at which the db listens")
 
 // Configures the databse with user, password, host, name, and SSL encryption
 // type
@@ -52,8 +55,8 @@ func FeedbackFormHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	defer file.Close()
 
-	// payload, err := ProcessJSON(file)
-	payload := map[string]interface{}{"something": 3}
+	payload, err := ProcessJSON(file)
+	// payload := map[string]interface{}{"something": 3}
 	if err != nil {
 		fmt.Println("Error parsing JSON payload: " + err.Error())
 		return
@@ -65,7 +68,7 @@ func FeedbackFormHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	resultChannel := make(chan *CeleryResult)
-	go api.RunJob("sift.jobrunner.jobs.sample.run", payload, resultChannel)
+	go api.RunJob("sift.jobrunner.jobs.re_nlp_job.run", payload, resultChannel)
 	result := <-resultChannel
 	close(resultChannel)
 
@@ -84,11 +87,12 @@ func FeedbackFormHandler(w http.ResponseWriter, r *http.Request) {
 
 // `main` function is the entry point, just like in C
 func main() {
+	flag.Parse()
 	// Database configuration
 	cfg := DBConfig{
 		DBUser:     "test",
 		DBPassword: "testpw",
-		DBHost:     "localhost",
+		DBHost:     *db_host,
 		DBName:     "sift_user_data",
 		DBSSLType:  "disable", // switch to 'require' in production
 	}
@@ -118,6 +122,7 @@ func main() {
 	// Handlers for logins
 	router.HandleFunc("/login", dm.Login).Methods("POST")
 	router.HandleFunc("/logout", dm.Logout).Methods("POST")
+	http.Handle("/", router)
 	// Create an http server on port 9090 and start serving using our router.
 	fmt.Println("Sift API running on port 9090...")
 	if err := http.ListenAndServe(":9090", router); err != nil {

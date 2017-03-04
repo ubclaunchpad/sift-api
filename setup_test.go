@@ -8,9 +8,9 @@ import (
 )
 
 var cfg = DBConfig{
-	DBUser:     "postgres",
+	DBUser:     "test",
 	DBPassword: "testpw",
-	DBHost:     "localhost",
+	DBHost:     "127.0.0.1",
 	DBName:     "sift_user_data",
 	DBSSLType:  "disable",
 }

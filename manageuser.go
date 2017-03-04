@@ -105,7 +105,7 @@ func (dm *DataManager) UpdateProfileHelper(un, cn, key string, val interface{}) 
 func (dm *DataManager) IndexNewProfile(w http.ResponseWriter, r *http.Request) {
 	// Handle error here as PostFormValue ignores errors
 	if err := r.ParseForm(); err != nil {
-		log.Fatal("r.ParseForm: ", err)
+		http.Error(w, "Form could not be parsed correctly", http.StatusBadRequest)
 		return
 	}
 	p := Profile{
@@ -115,7 +115,7 @@ func (dm *DataManager) IndexNewProfile(w http.ResponseWriter, r *http.Request) {
 		Address:     r.PostFormValue("company_address"),
 	}
 	if p.UserName == "" || p.CompanyName == "" || p.PwHash == nil || p.Address == "" {
-		http.Error(w, "One or more profile data fields were blank.", http.StatusBadRequest)
+		http.Error(w, "One or more profile data fields were blank", http.StatusBadRequest)
 		return
 	}
 	// TODO: replace with 'unique' key check, such that user_name/company_name is
@@ -127,7 +127,6 @@ func (dm *DataManager) IndexNewProfile(w http.ResponseWriter, r *http.Request) {
 	// Create a new profile record
 	if err := dm.Create(&p).Error; err != nil {
 		http.Error(w, "Database error on profile indexing.", http.StatusInternalServerError)
-		log.Fatal("dm.Create: ", err)
 		return
 	}
 	// Profile record created successfully, send OK
@@ -151,6 +150,10 @@ func (dm *DataManager) GetExistingProfile(w http.ResponseWriter, r *http.Request
 		http.Error(w, "One or more credentials were blank", http.StatusBadRequest)
 		return
 	}
+	if !dm.userExists(un, cn) {
+		http.Error(w, "User does not exist", http.StatusBadRequest)
+		return
+	}
 	// TODO: ensure authentication via cookie
 	// if !IsUserAuthenticated(un, cn) {
 	//     http.Error(w, "User not authenticated", http.StatusUnauthorized)
@@ -159,7 +162,6 @@ func (dm *DataManager) GetExistingProfile(w http.ResponseWriter, r *http.Request
 	p, err := dm.GetProfileHelper(un, cn)
 	if err != nil {
 		http.Error(w, "Database error on profile retrieval", http.StatusInternalServerError)
-		log.Fatal("dm.GetProfileHelper: ", err)
 		return
 	}
 	w.Header().Set("Content-Type", "application/json")
@@ -184,7 +186,11 @@ func (dm *DataManager) UpdateExistingProfile(w http.ResponseWriter, r *http.Requ
 		return
 	}
 	if err := r.ParseForm(); err != nil {
-		log.Fatal("r.ParseForm: ", err)
+		http.Error(w, "Form could not be parsed correctly", http.StatusBadRequest)
+		return
+	}
+	if !dm.userExists(un, cn) {
+		http.Error(w, "User does not exist", http.StatusBadRequest)
 		return
 	}
 	// TODO: ensure authentication via cookie
@@ -204,7 +210,6 @@ func (dm *DataManager) UpdateExistingProfile(w http.ResponseWriter, r *http.Requ
 		if err := (&DataManager{tx, &securecookie.SecureCookie{}}).UpdateProfileHelper(un, cn, k, v); err != nil {
 			tx.Rollback()
 			http.Error(w, "Database error on profile update", http.StatusInternalServerError)
-			log.Fatal("dm.UpdateProfileHelper: ", err)
 			return
 		}
 	}
@@ -251,7 +256,6 @@ func (dm *DataManager) DeleteExistingProfile(w http.ResponseWriter, r *http.Requ
 	qstring := "user_name = ? AND company_name = ?"
 	if err := dm.Unscoped().Where(qstring, un, cn).Delete(&Profile{}).Error; err != nil {
 		http.Error(w, "Database error on profile delete", http.StatusInternalServerError)
-		log.Fatal("dm.DeleteExistingProfile: ", err)
 		return
 	}
 	w.WriteHeader(http.StatusNoContent)

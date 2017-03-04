@@ -10,5 +10,5 @@ RUN apt-get update \
     && cd $SIFT_API_PATH \
     && go get \
     && go install
-
-CMD ["/go/bin/sift-api"]
+    
+CMD ["/go/bin/sift-api","--dbhost=postgres"]
