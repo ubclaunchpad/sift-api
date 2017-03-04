@@ -2,8 +2,8 @@ package main
 
 import (
 	"encoding/json"
-	"log"
 	"net/http"
+	"fmt"
 )
 
 // Login takes a request with a username, company name, and password hash,
@@ -35,16 +35,15 @@ func (dm *DataManager) Login(w http.ResponseWriter, r *http.Request) {
 	profile, err := dm.GetProfileHelper(name, company)
 
 	if err != nil {
-		log.Fatal("dm.GetProfileHelper", err)
+		fmt.Println("dm.GetProfileHelper", err)
 		http.Error(w, "User does not exist", http.StatusNotFound)
 		return
 	}
 
 	// Clear out any existing sessions for user
-	err = dm.DeleteSessionsByUserHelper(profile.ID)
 
-	if err != nil {
-		log.Fatal("dm.DeleteSessionsByUserHelper", err)
+	if err = dm.DeleteSessionsByUserHelper(profile.ID); err != nil {
+		fmt.Println("dm.DeleteSessionsByUserHelper", err)
 		http.Error(w, "Database error on clearing sessions for user login", http.StatusInternalServerError)
 		return
 	}
@@ -53,10 +52,8 @@ func (dm *DataManager) Login(w http.ResponseWriter, r *http.Request) {
 
 	sesh := Session{UserID: profile.ID}
 
-	err = dm.CreateSessionHelper(sesh)
-
-	if err != nil {
-		log.Fatal("dm.CreateSessionHelperHelper", err)
+	if err = dm.CreateSessionHelper(sesh); err != nil {
+		fmt.Println("dm.CreateSessionHelperHelper", err)
 		http.Error(w, "Database error on creating new session for login", http.StatusInternalServerError)
 		return
 	}
@@ -66,7 +63,7 @@ func (dm *DataManager) Login(w http.ResponseWriter, r *http.Request) {
 	createdSesh, err := dm.GetSessionByUserHelper(profile.ID)
 
 	if err != nil {
-		log.Fatal("dm.GetSessionByUserHelper", err)
+		fmt.Println("dm.GetSessionByUserHelper", err)
 		http.Error(w, "Database error on creating new session for login", http.StatusInternalServerError)
 		return
 	}
@@ -80,7 +77,7 @@ func (dm *DataManager) Login(w http.ResponseWriter, r *http.Request) {
 	encoded, err := dm.Encode("session", cookieValue)
 
 	if err != nil {
-		log.Fatal("dm.Encode", err)
+		fmt.Println("dm.Encode", err)
 		http.Error(w, "Error creating cookie for user", http.StatusInternalServerError)
 		return
 	}
@@ -116,7 +113,7 @@ func (dm *DataManager) Logout(w http.ResponseWriter, r *http.Request) {
 		// has cookie
 		seshCookie = *cookies[0]
 	default:
-		log.Fatal("Length of request cookie array is not 0 or 1")
+		fmt.Println("Length of request cookie array is not 0 or 1")
 		http.Error(w, "Error logging user out", http.StatusInternalServerError)
 		return
 	}
@@ -126,17 +123,15 @@ func (dm *DataManager) Logout(w http.ResponseWriter, r *http.Request) {
 	seshID, err := dm.DecodeCookieHelper(seshCookie)
 
 	if err != nil {
-		log.Fatal("dm.DecodeCookieHelper", err)
+		fmt.Println("dm.DecodeCookieHelper", err)
 		http.Error(w, "Could not get session ID from cookie", http.StatusBadRequest)
 		return
 	}
 
 	// delete session ID
 
-	err = dm.DeleteSessionByIdHelper(seshID)
-
-	if err != nil {
-		log.Fatal("dm.DeleteSessionByIdHelper", err)
+	if err = dm.DeleteSessionByIdHelper(seshID); err != nil {
+		fmt.Println("dm.DeleteSessionByIdHelper", err)
 		http.Error(w, "Error clearing sessions for logout", http.StatusInternalServerError)
 		return
 	}
@@ -163,7 +158,7 @@ func (dm *DataManager) GetProfileFromCookie(w http.ResponseWriter, r *http.Reque
 		// has cookie
 		seshCookie = *cookies[0]
 	default:
-		log.Fatal("Length of request cookie array is not 0 or 1")
+	 	fmt.Println("Length of request cookie array is not 0 or 1")
 		http.Error(w, "Error logging user out", http.StatusInternalServerError)
 		return
 	}
@@ -173,7 +168,7 @@ func (dm *DataManager) GetProfileFromCookie(w http.ResponseWriter, r *http.Reque
 	seshID, err := dm.DecodeCookieHelper(seshCookie)
 
 	if err != nil {
-		log.Fatal("dm.DecodeCookieHelper", err)
+		fmt.Println("dm.DecodeCookieHelper", err)
 		http.Error(w, "Could not get session ID from cookie", http.StatusBadRequest)
 		return
 	}
@@ -187,20 +182,20 @@ func (dm *DataManager) GetProfileFromCookie(w http.ResponseWriter, r *http.Reque
 	}
 
 	// get profile object
-	Profile, err := dm.GetProfileByIdHelper(sesh.UserID)
+	profile, err := dm.GetProfileByIdHelper(sesh.UserID)
 
 	if err != nil {
-		log.Fatal("dm.GetProfileByIdHelper", err)
+		fmt.Println("dm.GetProfileByIdHelper", err)
 		http.Error(w, "Could not find user from that session", http.StatusInternalServerError)
 		return
 	}
 
 	// strip password
-	Profile.PwHash = []byte("")
+	profile.PwHash = []byte("")
 
-	body, err := json.Marshal(Profile)
+	body, err := json.Marshal(profile)
 	if err != nil {
-		log.Fatal("json.Marshal: ", err)
+		fmt.Println("json.Marshal: ", err)
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		return
 	}

@@ -1,8 +1,8 @@
 package main
 
 import (
-	"log"
 	"net/http"
+	"fmt"
 )
 
 // Cookie Helpers
@@ -16,7 +16,7 @@ func (dm *DataManager) CreateCookieHelper(id uint) (http.Cookie, error) {
 
 	encoded, err := dm.Encode("session", value)
 	if err != nil {
-		log.Fatal("dm.Encode, err:", err)
+		fmt.Println("dm.Encode, err:", err)
 		return http.Cookie{}, err
 	}
 
@@ -35,7 +35,7 @@ func (dm *DataManager) DecodeCookieHelper(cookie http.Cookie) (uint, error) {
 	value := make(map[string]uint)
 
 	if err := dm.Decode("session", cookie.Value, &value); err != nil {
-		log.Fatal("dm.Decode, err:", err)
+		fmt.Println("dm.Decode, err:", err)
 		return 0, err
 	}
 
@@ -63,16 +63,10 @@ func (dm *DataManager) GetSessionByUserHelper(id uint) (sesh Session, err error)
 
 // DeleteSessionByIdHelper deletes a single session by id
 func (dm *DataManager) DeleteSessionByIdHelper(id uint) error {
-	return dm.Where("id = ?", id).Delete(Session{}).Error
+	return dm.Unscoped().Where("id = ?", id).Delete(Session{}).Error
 }
 
 // DeleteSessionsByUserHelper delete all sessions for a given UserID
 func (dm *DataManager) DeleteSessionsByUserHelper(id uint) error {
-	return dm.Where("user_id = ?", id).Delete(Session{}).Error
+	return dm.Unscoped().Where("user_id = ?", id).Delete(Session{}).Error
 }
-
-// Handler Functions
-
-//func (dm *DataManager) GetFromCookie(w http.ResponseWriter, r *http.Request) {
-
-//}
