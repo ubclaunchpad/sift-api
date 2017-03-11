@@ -35,7 +35,7 @@ func (dm *DataManager) Login(w http.ResponseWriter, r *http.Request) {
 	profile, err := dm.GetProfileHelper(name, company)
 
 	if err != nil {
-		fmt.Println("dm.GetProfileHelper", err)
+		fmt.Println("dm.GetProfileHelper: ", err.Error())
 		http.Error(w, "User does not exist", http.StatusNotFound)
 		return
 	}
@@ -43,7 +43,7 @@ func (dm *DataManager) Login(w http.ResponseWriter, r *http.Request) {
 	// Clear out any existing sessions for user
 
 	if err = dm.DeleteSessionsByUserHelper(profile.ID); err != nil {
-		fmt.Println("dm.DeleteSessionsByUserHelper", err)
+		fmt.Println("dm.DeleteSessionsByUserHelper: ", err.Error())
 		http.Error(w, "Database error on clearing sessions for user login", http.StatusInternalServerError)
 		return
 	}

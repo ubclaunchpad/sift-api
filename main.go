@@ -1,7 +1,6 @@
 package main
 
 import (
-	"encoding/json"
 	"flag"
 	"fmt"
 	"log"
@@ -36,53 +35,6 @@ type DBConfig struct {
 func (cfg DBConfig) createDBQueryString() string {
 	return fmt.Sprintf("user=%s password=%s host=%s dbname=%s sslmode=%s",
 		cfg.DBUser, cfg.DBPassword, cfg.DBHost, cfg.DBName, cfg.DBSSLType)
-}
-
-// Handles uploads of multipart forms. Files should have form name `feedback`.
-// Uploaded files are stored in `./uploads`
-func FeedbackFormHandler(w http.ResponseWriter, r *http.Request) {
-	fmt.Println("/feedback")
-	w.Header().Set("Access-Control-Allow-Origin", "*")
-	w.Header().Set("Content-Type", "application/json")
-
-	if err := r.ParseMultipartForm(MAX_FILE_SIZE); err != nil {
-		fmt.Println("Error parsing form: " + err.Error())
-	}
-	file, _, err := r.FormFile("feedback")
-	if err != nil {
-		fmt.Println("Error parsing form: " + err.Error())
-		return
-	}
-	defer file.Close()
-
-	payload, err := ProcessJSON(file)
-	// payload := map[string]interface{}{"something": 3}
-	if err != nil {
-		fmt.Println("Error parsing JSON payload: " + err.Error())
-		return
-	}
-
-	api, err := NewCeleryAPI(AMQP_URL, REDIS_URL)
-	if err != nil {
-		fmt.Println("Error creating celery API: ", err.Error())
-	}
-
-	resultChannel := make(chan *CeleryResult)
-	go api.RunJob("sift.jobrunner.jobs.re_nlp_job.run", payload, resultChannel)
-	result := <-resultChannel
-	close(resultChannel)
-
-	if result.Error != nil {
-		fmt.Println("Error running job: " + result.Error.Error())
-		return
-	}
-
-	fmt.Println("Job result: ", result.Body)
-	body, err := json.Marshal(result.Body)
-	if err != nil {
-		fmt.Println("Error mashalling job response: " + err.Error())
-	}
-	w.Write(body)
 }
 
 // `main` function is the entry point, just like in C
