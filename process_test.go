@@ -7,54 +7,48 @@ import (
 	"os"
 )
 
-func TestIsLooseJSONTrue(t *testing.T) {
-	uffile, err := os.Open("test_data/test_unformatted.json")
+func TestIsMalformedJSONTrue(t *testing.T) {
+	mf, err := os.Open("test_data/test_malformed.json")
 	if err != nil {
 		return
 	}
-	defer uffile.Close()
+	defer mf.Close()
 	// Expect unformatted json to return true
-	loose, err := IsLooseJSON(uffile)
-	if err != nil {
-		t.Error("Error returned, not expected: ", err)
-	} else if !loose {
-		t.Error("Expected loose, but was not loose")
+	if !IsMalformedJSON(mf) {
+		t.Error("Expected malformed, but was not malformed")
 	}
 }
 
-func TestIsLooseJSONFalse(t *testing.T) {
-	ffile, err := os.Open("test_data/test_formatted.json")
+func TestIsMalformedJSONFalse(t *testing.T) {
+	ff, err := os.Open("test_data/test_formatted.json")
 	if err != nil {
 		return
 	}
-	defer ffile.Close()
+	defer ff.Close()
 	// Expect formatted json to return false
-	loose, err := IsLooseJSON(ffile)
-	if err != nil {
-		t.Error("Error returned, not expected: ", err)
-	} else if loose {
-		t.Error("Expected not loose, but was loose")
+	if IsMalformedJSON(ff) {
+		t.Error("Expected not malformed, but was malformed")
 	}
 }
 
-func TestStrictifyJSONSmall(t *testing.T) {
-	uffile, err := os.Open("test_data/test_unformatted_small.json")
+func TestProcessJSOMalformed(t *testing.T) {
+	mf, err := os.Open("test_data/test_malformed.json")
 	if err != nil {
 		return
 	}
-	defer uffile.Close()
-	ffile, err := os.Open("test_data/test_processed_small.json")
+	defer mf.Close()
+	ff, err := os.Open("test_data/test_processed.json")
 	if err != nil {
 		return
 	}
-	defer ffile.Close()
+	defer ff.Close()
 
 	var desired interface{}
-	if err = json.NewDecoder(ffile).Decode(&desired); err != nil {
+	if err = json.NewDecoder(ff).Decode(&desired); err != nil {
 		t.Error("Error returned decoding json, not expected: ", err)
 	}
 
-	check, err := ProcessJSON(uffile)
+	check, err := ProcessJSON(mf)
 	if err != nil {
 		t.Error("Error returned, not expected: ", err)
 	}
@@ -62,36 +56,20 @@ func TestStrictifyJSONSmall(t *testing.T) {
 	temp2, _ := json.Marshal(&desired)
 
 	if string(temp1) != string(temp2) {
-		t.Error("StrictifyJSON did not work on a small file")
+		t.Errorf("StrictifyJSON: results not equal: %s != %s", temp1, temp2)
 	}
 }
 
-func TestStrictifyJSONLarge(t *testing.T) {
-	uffile, err := os.Open("test_data/test_unformatted.json")
+func TestProcessJSONFormatted(t *testing.T) {
+	ff, err := os.Open("test_data/test_formatted.json")
 	if err != nil {
 		return
 	}
-	defer uffile.Close()
-	ffile, err := os.Open("test_data/test_processed.json")
-	if err != nil {
-		return
-	}
-	defer ffile.Close()
+	defer ff.Close()
 
-	var desired interface{}
-	if err = json.NewDecoder(ffile).Decode(&desired); err != nil {
-		t.Error("Error returned decoding json, not expected: ", err)
-	}
-
-	check, err := ProcessJSON(uffile)
+	_, err = ProcessJSON(ff)
 	if err != nil {
 		t.Error("Error returned, not expected: ", err)
-	}
-	temp1, _ := json.Marshal(&check)
-	temp2, _ := json.Marshal(&desired)
-
-	if string(temp1) != string(temp2) {
-		t.Error("StrictifyJSON did not work on a large file")
 	}
 }
 
@@ -107,15 +85,45 @@ func BenchmarkJSONFull(b *testing.B) {
 
 	b.StartTimer()
 	// Uncomment following two commented sections to write data to stdout as csv
-	// out, err := ProcessJSON(hk)
 	_, err = ProcessJSON(hk)
 	b.StopTimer()
 	if err != nil {
 		b.Error("ProcessJSON did not work on a yuge file")
 	}
 
-	// if err := WriteCSVToStdOut(out); err != nil {
-	// 	return
-	// }
-
 }
+
+// func TestFeedbackFormHandlerValidJSON(t *testing.T) {
+// 	fp := "test_data/hk_feedback_valid.json"
+// 	f, err := os.Open(fp)
+// 	if err != nil {
+// 		t.Error("Couldn't open file")
+// 	}
+//
+// 	body := &bytes.Buffer{}
+// 	writer := multipart.NewWriter(body)
+// 	part, err := writer.CreateFormFile("feedback", filepath.Base(fp))
+// 	if err != nil {
+// 		t.Error("Couldn't create form file")
+// 	}
+// 	_, err = io.Copy(part, f)
+//
+// 	err = writer.Close()
+// 	if err != nil {
+// 		t.Error("Couldn't close writer")
+// 	}
+//
+// 	req, _ := http.NewRequest("POST", "/feedback", body)
+// 	req.Header.Set("Content-Type", writer.FormDataContentType())
+// 	rr := httptest.NewRecorder()
+// 	handler := http.HandlerFunc(FeedbackFormHandler)
+// 	handler.ServeHTTP(rr, req)
+// 	if rr.Code != http.StatusOK {
+// 		t.Errorf("HTTP status code recieved: %d, expected %d", rr.Code, http.StatusOK)
+// 	}
+// 	// err = json.Unmarshal(rr.Body.Bytes(), &p)
+// 	// if err != nil {
+// 	// 	t.Errorf("Error (%v) encountered when unmarshalling profile", err)
+// 	// }
+//
+// }
