@@ -199,6 +199,8 @@ func TestGetProfileFromCookie(t *testing.T) {
 	assert.True(t, sesh.ID > 0)
 	assert.Equal(t, sesh.UserID, profile.ID)
 
+	defer dm.Unscoped().Delete(&sesh)
+
 	// now we actually test getting profile from our
 	// newly acquired cookie
 

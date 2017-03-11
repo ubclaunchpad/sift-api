@@ -2,8 +2,8 @@ package main
 
 import (
 	"encoding/json"
-	"net/http"
 	"fmt"
+	"net/http"
 )
 
 // Login takes a request with a username, company name, and password hash,
@@ -158,7 +158,7 @@ func (dm *DataManager) GetProfileFromCookie(w http.ResponseWriter, r *http.Reque
 		// has cookie
 		seshCookie = *cookies[0]
 	default:
-	 	fmt.Println("Length of request cookie array is not 0 or 1")
+		fmt.Println("Length of request cookie array is not 0 or 1")
 		http.Error(w, "Error logging user out", http.StatusInternalServerError)
 		return
 	}

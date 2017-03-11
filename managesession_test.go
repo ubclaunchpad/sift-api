@@ -16,6 +16,8 @@ func TestGetSessionById(t *testing.T) {
 	s := Session{UserID: 1}
 
 	ns := dm.Create(&s).Value
+	defer dm.Unscoped().Delete(&s)
+
 	id := (ns.(*Session)).ID
 	if dm.First(&s).RecordNotFound() {
 		t.Error("Record not found")
@@ -38,22 +40,13 @@ func TestCreateSession(t *testing.T) {
 		t.Error("dm.CreateSessionHelper", err)
 	}
 
+	defer dm.Unscoped().Delete(&sesh)
+
 	// Check sesh was added
 	if seshRetrieved, err := dm.GetSessionByUserHelper(userID); err != nil {
 		t.Error("dm.GetSessionByUserHelper", err)
 	} else {
 		assert.Equal(t, sesh.UserID, seshRetrieved.UserID)
-	}
-
-	// Delete sesh and check it was deleted
-	if err := dm.DeleteSessionsByUserHelper(userID); err != nil {
-		t.Error("dm.DeleteSessionsByUserHelper", err)
-	}
-
-	if seshRetrieved, err := dm.GetSessionByUserHelper(userID); err == nil {
-		t.Error("Session was not deleted")
-	} else {
-		assert.Equal(t, seshRetrieved.ID, uint(0))
 	}
 
 }
@@ -103,6 +96,17 @@ func TestSessionMiddlewareGood(t *testing.T) {
 	if len(cookies) != 1 {
 		t.Errorf("Failed to get cookies from login")
 	}
+
+	// Get session so we can defer a delete of it when
+	// test ends
+
+	seshID, err := dm.DecodeCookieHelper(*cookies[0])
+
+	if err != nil {
+		t.Error("dm.DecodeCookieHelper", err)
+	}
+
+	defer dm.DeleteSessionByIdHelper(seshID)
 
 	// Set up a mock handler function that will be wrapped by
 	// our session MW and get a reference to the context
@@ -181,6 +185,8 @@ func TestSessionMiddlewareNoCookie(t *testing.T) {
 	rr := httptest.NewRecorder()
 	handler := dm.SessionMiddleware(router)
 	handler.ServeHTTP(rr, req)
+
+	assert.Equal(t, http.StatusOK, rr.Code)
 
 	profile := ctx.Value("profile")
 
