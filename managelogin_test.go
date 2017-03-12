@@ -36,8 +36,7 @@ func TestLoginGood(t *testing.T) {
 	req, err := http.NewRequest("POST", "/login", strings.NewReader(formData.Encode()))
 
 	if err != nil {
-		t.Log("http.NewRequest", err)
-		t.Fail()
+		t.Error("http.NewRequest", err)
 	}
 
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
@@ -59,8 +58,7 @@ func TestLoginBadNamePass(t *testing.T) {
 	req, err := http.NewRequest("POST", "/login", nil)
 
 	if err != nil {
-		t.Log("http.NewRequest", err)
-		t.Fail()
+		t.Error("http.NewRequest", err)
 	}
 
 	rr := httptest.NewRecorder()
@@ -102,8 +100,7 @@ func TestLogoutGood(t *testing.T) {
 	req, err := http.NewRequest("POST", "/login", strings.NewReader(formData.Encode()))
 
 	if err != nil {
-		t.Log("http.NewRequest", err)
-		t.Fail()
+		t.Error("http.NewRequest", err)
 	}
 
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
@@ -123,15 +120,13 @@ func TestLogoutGood(t *testing.T) {
 	profile, err := dm.GetProfileHelper("super_sifter", "Sift Technologies, Inc.")
 
 	if err != nil {
-		t.Log("dm.GetProfileHelper", err)
-		t.Fail()
+		t.Error("dm.GetProfileHelper", err)
 	}
 
 	sesh, err := dm.GetSessionByUserHelper(profile.ID)
 
 	if err != nil {
-		t.Log("dm.GetSessionByUserHelper", err)
-		t.Fail()
+		t.Error("dm.GetSessionByUserHelper", err)
 	}
 
 	assert.True(t, sesh.ID > 0)
@@ -142,8 +137,7 @@ func TestLogoutGood(t *testing.T) {
 	req, err = http.NewRequest("GET", "/logout", nil)
 
 	if err != nil {
-		t.Log("http.NewRequest", err)
-		t.Fail()
+		t.Error("http.NewRequest", err)
 	}
 
 	req.AddCookie(cookie[0])
@@ -173,8 +167,7 @@ func TestGetProfileFromCookie(t *testing.T) {
 	req, err := http.NewRequest("POST", "/login", strings.NewReader(formData.Encode()))
 
 	if err != nil {
-		t.Log("http.NewRequest", err)
-		t.Fail()
+		t.Error("http.NewRequest", err)
 	}
 
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
@@ -194,19 +187,19 @@ func TestGetProfileFromCookie(t *testing.T) {
 	profile, err := dm.GetProfileHelper("super_sifter", "Sift Technologies, Inc.")
 
 	if err != nil {
-		t.Log("dm.GetProfileHelper", err)
-		t.Fail()
+		t.Error("dm.GetProfileHelper", err)
 	}
 
 	sesh, err := dm.GetSessionByUserHelper(profile.ID)
 
 	if err != nil {
-		t.Log("dm.GetSessionByUserHelper", err)
-		t.Fail()
+		t.Error("dm.GetSessionByUserHelper", err)
 	}
 
 	assert.True(t, sesh.ID > 0)
 	assert.Equal(t, sesh.UserID, profile.ID)
+
+	defer dm.Unscoped().Delete(&sesh)
 
 	// now we actually test getting profile from our
 	// newly acquired cookie
@@ -214,8 +207,7 @@ func TestGetProfileFromCookie(t *testing.T) {
 	req, err = http.NewRequest("GET", "/auth", nil)
 
 	if err != nil {
-		t.Log("http.NewRequest", err)
-		t.Fail()
+		t.Error("http.NewRequest", err)
 	}
 
 	rr = httptest.NewRecorder()
@@ -230,8 +222,7 @@ func TestGetProfileFromCookie(t *testing.T) {
 	resProfile := Profile{}
 	err = json.Unmarshal(rr.Body.Bytes(), &resProfile)
 	if err != nil {
-		t.Log("json.Unmarshal", err)
-		t.Fail()
+		t.Error("json.Unmarshal", err)
 	}
 
 	assert.Equal(t, profile.ID, resProfile.ID)
@@ -248,16 +239,14 @@ func TestGetProfileFromCookieUnauthorized(t *testing.T) {
 	cookie, err := dm.CreateCookieHelper(99999)
 
 	if err != nil {
-		t.Log("dm.CreateCookieHelper", err)
-		t.Fail()
+		t.Error("dm.CreateCookieHelper", err)
 	}
 
 	// try to get profile using bad session
 	req, err := http.NewRequest("GET", "/auth", nil)
 
 	if err != nil {
-		t.Log("http.NewRequest", err)
-		t.Fail()
+		t.Error("http.NewRequest", err)
 	}
 
 	rr := httptest.NewRecorder()
