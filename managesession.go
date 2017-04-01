@@ -36,7 +36,7 @@ func (dm *DataManager) DecodeCookieHelper(cookie http.Cookie) (uint, error) {
 	value := make(map[string]uint)
 
 	if err := dm.Decode("session", cookie.Value, &value); err != nil {
-		fmt.Println("dm.Decode, err:", err)
+		fmt.Println("dm.Decode:", err)
 		return 0, err
 	}
 
@@ -97,9 +97,7 @@ func (dm *DataManager) SessionMiddleware(next http.Handler) http.Handler {
 		}
 
 		// Decode cookie
-
 		seshID, err := dm.DecodeCookieHelper(seshCookie)
-
 		if err != nil {
 			fmt.Println("dm.DecodeCookieHelper", err)
 			http.Error(w, "Could not get session ID from cookie", http.StatusBadRequest)
@@ -107,9 +105,7 @@ func (dm *DataManager) SessionMiddleware(next http.Handler) http.Handler {
 		}
 
 		// Get session record
-
 		sesh, err := dm.GetSessionByIdHelper(seshID)
-
 		if err != nil {
 			fmt.Println("dm.GetSessionByIdHelper", err)
 			http.Error(w, "Could not find session with that ID", http.StatusBadRequest)
@@ -117,9 +113,7 @@ func (dm *DataManager) SessionMiddleware(next http.Handler) http.Handler {
 		}
 
 		// Get user profile for session
-
 		profile, err := dm.GetProfileByIdHelper(sesh.UserID)
-
 		if err != nil {
 			fmt.Println("dm.GetProfileByIdHelper")
 			http.Error(w, "Could not find profile with that ID", http.StatusBadRequest)
@@ -130,7 +124,6 @@ func (dm *DataManager) SessionMiddleware(next http.Handler) http.Handler {
 		profile.PwHash = []byte("")
 
 		// Attach user profile to request context
-
 		// TODO: custom 'key' type for profile to avoid possible
 		// collisions with other packages (recommended by docs)
 		ctx := context.WithValue(r.Context(), "profile", &profile)

@@ -32,7 +32,10 @@ func (f *Feedback) MarshalJSON() ([]byte, error) {
 // Detect whether input data is 'loose' JSON
 func IsMalformedJSON(file io.Reader) bool {
 	// Any set of dictionaries without a ',' between brackets is malformed
-	re, _ := regexp.Compile(".*}[^,]*{.*")
+	re, err := regexp.Compile(".*}[^,]*{.*")
+	if err != nil {
+		panic("IsMalformedJSON: regex failed to compile")
+	}
 	buf := make([]byte, 1024)
 	for {
 		n, err := file.Read(buf)
@@ -155,6 +158,7 @@ func FeedbackFormHandler(w http.ResponseWriter, r *http.Request) {
 	defer file.Close()
 
 	var payload interface{}
+	// Perform malformed JSON check first so file position can be reset
 	malformed := IsMalformedJSON(file)
 	// Reset file position
 	file.Seek(0, 0)
